@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EMI Calculator Hub — Home Loan, Personal Loan, Bike Loan</title>
+<meta name="description" content="Free EMI calculator for home loan, personal loan, bike loan, and education loan. Instant results, amortization table, no signup needed.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #161a24;
+    --card: #1e2333;
+    --border: #2a3045;
+    --accent: #4f8ef7;
+    --accent2: #38d9a9;
+    --warn: #f9c74f;
+    --text: #e8ecf4;
+    --muted: #6b7694;
+    --font: 'Sora', sans-serif;
+    --mono: 'DM Mono', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 1.2rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .logo { font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em; }
+  .logo span { color: var(--accent); }
+  .tagline { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+
+  .ad-banner {
+    background: var(--surface);
+    border: 1px dashed var(--border);
+    text-align: center;
+    padding: 0.6rem;
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 0;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    padding: 0 2rem;
+  }
+  .tab {
+    padding: 1rem 1.4rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: all 0.15s;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    font-family: var(--font);
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .main { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+  .calc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  @media(max-width: 640px) { .calc-grid { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+  }
+  .panel h2 { font-size: 0.9rem; color: var(--muted); font-weight: 600; margin-bottom: 1.2rem; letter-spacing: 0.04em; text-transform: uppercase; }
+
+  .field { margin-bottom: 1.2rem; }
+  .field label { display: block; font-size: 0.78rem; color: var(--muted); margin-bottom: 0.4rem; }
+  .field input[type="range"] {
+    width: 100%;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+  .field .row { display: flex; justify-content: space-between; align-items: center; margin-top: 0.3rem; }
+  .field .val {
+    font-family: var(--mono);
+    font-size: 0.95rem;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.3rem 0.7rem;
+    min-width: 90px;
+    text-align: right;
+  }
+  .field .range-labels { display: flex; justify-content: space-between; font-size: 0.68rem; color: var(--muted); margin-top: 0.2rem; }
+
+  .result-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.2rem;
+    margin-bottom: 1rem;
+  }
+  .result-box .label { font-size: 0.72rem; color: var(--muted); margin-bottom: 0.3rem; }
+  .result-box .amount {
+    font-size: 2rem;
+    font-weight: 700;
+    font-family: var(--mono);
+    color: var(--accent2);
+    letter-spacing: -0.02em;
+  }
+  .result-box .sub { font-size: 0.75rem; color: var(--muted); margin-top: 0.3rem; }
+
+  .breakdown { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; margin-bottom: 1rem; }
+  .mini-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 0.8rem; }
+  .mini-card .label { font-size: 0.68rem; color: var(--muted); margin-bottom: 0.3rem; }
+  .mini-card .val { font-family: var(--mono); font-size: 1rem; font-weight: 600; }
+  .mini-card .val.red { color: #ff6b6b; }
+  .mini-card .val.green { color: var(--accent2); }
+
+  .pie-wrap { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+  canvas#pie { width: 90px !important; height: 90px !important; }
+  .legend { font-size: 0.75rem; }
+  .legend div { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.4rem; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+  .section-break { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+
+  .amort-title { font-size: 0.9rem; font-weight: 700; margin-bottom: 1rem; }
+  .amort-table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.78rem; font-family: var(--mono); }
+  th { text-align: left; padding: 0.6rem 0.8rem; background: var(--surface); color: var(--muted); font-weight: 500; border-bottom: 1px solid var(--border); }
+  td { padding: 0.5rem 0.8rem; border-bottom: 1px solid var(--border); color: var(--text); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface); }
+
+  .show-more {
+    width: 100%;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--muted);
+    padding: 0.7rem;
+    font-size: 0.78rem;
+    cursor: pointer;
+    margin-top: 0.8rem;
+    font-family: var(--font);
+    transition: all 0.15s;
+  }
+  .show-more:hover { background: var(--surface); color: var(--text); }
+
+  .ad-mid {
+    background: var(--surface);
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    text-align: center;
+    padding: 1rem;
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    margin: 1.5rem 0;
+  }
+
+  footer {
+    text-align: center;
+    padding: 2rem;
+    font-size: 0.72rem;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+    margin-top: 3rem;
+  }
+
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo">EMI<span>Calc</span>.in</div>
+    <div class="tagline">Free loan calculator — no signup, no spam</div>
+  </div>
+</header>
+
+<!-- AD SLOT TOP BANNER -->
+<div class="ad-banner">ADVERTISEMENT — Google AdSense 728×90 leaderboard goes here</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('home')">🏠 Home Loan</button>
+  <button class="tab" onclick="switchTab('personal')">💼 Personal Loan</button>
+  <button class="tab" onclick="switchTab('bike')">🏍️ Bike Loan</button>
+  <button class="tab" onclick="switchTab('edu')">🎓 Education Loan</button>
+</div>
+
+<div class="main">
+
+  <!-- HOME LOAN -->
+  <div id="tab-home">
+    <div class="calc-grid">
+      <div class="panel">
+        <h2>Home Loan</h2>
+
+        <div class="field">
+          <label>Loan Amount</label>
+          <input type="range" id="home-amt" min="500000" max="10000000" step="100000" value="3000000" oninput="calcHome()">
+          <div class="row"><span class="range-labels" style="font-size:0.68rem">₹5L</span><span class="val" id="home-amt-val">₹30,00,000</span><span class="range-labels" style="font-size:0.68rem">₹1Cr</span></div>
+        </div>
+
+        <div class="field">
+          <label>Interest Rate (% per year)</label>
+          <input type="range" id="home-rate" min="6" max="14" step="0.1" value="8.5" oninput="calcHome()">
+          <div class="row"><span class="range-labels">6%</span><span class="val" id="home-rate-val">8.5%</span><span class="range-labels">14%</span></div>
+        </div>
+
+        <div class="field">
+          <label>Loan Tenure (Years)</label>
+          <input type="range" id="home-tenure" min="5" max="30" step="1" value="20" oninput="calcHome()">
+          <div class="row"><span class="range-labels">5 yrs</span><span class="val" id="home-tenure-val">20 yrs</span><span class="range-labels">30 yrs</span></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="result-box">
+          <div class="label">MONTHLY EMI</div>
+          <div class="amount" id="home-emi">₹26,035</div>
+          <div class="sub">per month for <span id="home-tenure-disp">20</span> years</div>
+        </div>
+        <div class="breakdown">
+          <div class="mini-card"><div class="label">Principal</div><div class="val green" id="home-principal">₹30,00,000</div></div>
+          <div class="mini-card"><div class="label">Total Interest</div><div class="val red" id="home-interest">₹32,48,400</div></div>
+          <div class="mini-card"><div class="label">Total Payment</div><div class="val" id="home-total">₹62,48,400</div></div>
+          <div class="mini-card"><div class="label">Interest %</div><div class="val red" id="home-int-pct">52%</div></div>
+        </div>
+        <div class="pie-wrap">
+          <canvas id="pie-home" width="90" height="90"></canvas>
+          <div class="legend">
+            <div><div class="dot" style="background:var(--accent2)"></div>Principal amount</div>
+            <div><div class="dot" style="background:#ff6b6b"></div>Total interest</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AD MID -->
+    <div class="ad-mid">ADVERTISEMENT — Google AdSense 728×90 or 336×280 rectangle goes here</div>
+
+    <hr class="section-break">
+    <div class="amort-title">Amortization Schedule</div>
+    <div class="amort-table-wrap">
+      <table>
+        <thead><tr><th>Year</th><th>Principal Paid</th><th>Interest Paid</th><th>Total Paid</th><th>Balance</th></tr></thead>
+        <tbody id="home-amort"></tbody>
+      </table>
+    </div>
+    <button class="show-more hidden" id="home-more" onclick="showAllHome()">Show all years ▾</button>
+  </div>
+
+  <!-- PERSONAL LOAN -->
+  <div id="tab-personal" class="hidden">
+    <div class="calc-grid">
+      <div class="panel">
+        <h2>Personal Loan</h2>
+        <div class="field">
+          <label>Loan Amount</label>
+          <input type="range" id="p-amt" min="50000" max="2000000" step="10000" value="500000" oninput="calcPersonal()">
+          <div class="row"><span class="range-labels">₹50K</span><span class="val" id="p-amt-val">₹5,00,000</span><span class="range-labels">₹20L</span></div>
+        </div>
+        <div class="field">
+          <label>Interest Rate (% per year)</label>
+          <input type="range" id="p-rate" min="10" max="24" step="0.25" value="14" oninput="calcPersonal()">
+          <div class="row"><span class="range-labels">10%</span><span class="val" id="p-rate-val">14%</span><span class="range-labels">24%</span></div>
+        </div>
+        <div class="field">
+          <label>Loan Tenure (Years)</label>
+          <input type="range" id="p-tenure" min="1" max="7" step="1" value="3" oninput="calcPersonal()">
+          <div class="row"><span class="range-labels">1 yr</span><span class="val" id="p-tenure-val">3 yrs</span><span class="range-labels">7 yrs</span></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="result-box">
+          <div class="label">MONTHLY EMI</div>
+          <div class="amount" id="p-emi">₹17,089</div>
+          <div class="sub">per month for <span id="p-tenure-disp">3</span> years</div>
+        </div>
+        <div class="breakdown">
+          <div class="mini-card"><div class="label">Principal</div><div class="val green" id="p-principal">₹5,00,000</div></div>
+          <div class="mini-card"><div class="label">Total Interest</div><div class="val red" id="p-interest">₹1,15,204</div></div>
+          <div class="mini-card"><div class="label">Total Payment</div><div class="val" id="p-total">₹6,15,204</div></div>
+          <div class="mini-card"><div class="label">Interest %</div><div class="val red" id="p-int-pct">19%</div></div>
+        </div>
+        <div class="pie-wrap">
+          <canvas id="pie-personal" width="90" height="90"></canvas>
+          <div class="legend">
+            <div><div class="dot" style="background:var(--accent2)"></div>Principal amount</div>
+            <div><div class="dot" style="background:#ff6b6b"></div>Total interest</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="ad-mid">ADVERTISEMENT — Google AdSense goes here</div>
+    <hr class="section-break">
+    <div class="amort-title">Amortization Schedule</div>
+    <div class="amort-table-wrap"><table><thead><tr><th>Year</th><th>Principal Paid</th><th>Interest Paid</th><th>Total Paid</th><th>Balance</th></tr></thead><tbody id="p-amort"></tbody></table></div>
+  </div>
+
+  <!-- BIKE LOAN -->
+  <div id="tab-bike" class="hidden">
+    <div class="calc-grid">
+      <div class="panel">
+        <h2>Bike / Two-Wheeler Loan</h2>
+        <div class="field">
+          <label>Loan Amount</label>
+          <input type="range" id="b-amt" min="30000" max="300000" step="5000" value="80000" oninput="calcBike()">
+          <div class="row"><span class="range-labels">₹30K</span><span class="val" id="b-amt-val">₹80,000</span><span class="range-labels">₹3L</span></div>
+        </div>
+        <div class="field">
+          <label>Interest Rate (% per year)</label>
+          <input type="range" id="b-rate" min="9" max="20" step="0.25" value="12" oninput="calcBike()">
+          <div class="row"><span class="range-labels">9%</span><span class="val" id="b-rate-val">12%</span><span class="range-labels">20%</span></div>
+        </div>
+        <div class="field">
+          <label>Loan Tenure (Months)</label>
+          <input type="range" id="b-tenure" min="12" max="48" step="6" value="24" oninput="calcBike()">
+          <div class="row"><span class="range-labels">12 mo</span><span class="val" id="b-tenure-val">24 mo</span><span class="range-labels">48 mo</span></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="result-box">
+          <div class="label">MONTHLY EMI</div>
+          <div class="amount" id="b-emi">₹3,762</div>
+          <div class="sub">per month for <span id="b-tenure-disp">24</span> months</div>
+        </div>
+        <div class="breakdown">
+          <div class="mini-card"><div class="label">Principal</div><div class="val green" id="b-principal">₹80,000</div></div>
+          <div class="mini-card"><div class="label">Total Interest</div><div class="val red" id="b-interest">₹10,288</div></div>
+          <div class="mini-card"><div class="label">Total Payment</div><div class="val" id="b-total">₹90,288</div></div>
+          <div class="mini-card"><div class="label">Interest %</div><div class="val red" id="b-int-pct">11%</div></div>
+        </div>
+        <div class="pie-wrap">
+          <canvas id="pie-bike" width="90" height="90"></canvas>
+          <div class="legend">
+            <div><div class="dot" style="background:var(--accent2)"></div>Principal amount</div>
+            <div><div class="dot" style="background:#ff6b6b"></div>Total interest</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="ad-mid">ADVERTISEMENT — Google AdSense goes here</div>
+    <hr class="section-break">
+    <div class="amort-title">Monthly Schedule</div>
+    <div class="amort-table-wrap"><table><thead><tr><th>Month</th><th>Principal Paid</th><th>Interest Paid</th><th>Total Paid</th><th>Balance</th></tr></thead><tbody id="b-amort"></tbody></table></div>
+  </div>
+
+  <!-- EDUCATION LOAN -->
+  <div id="tab-edu" class="hidden">
+    <div class="calc-grid">
+      <div class="panel">
+        <h2>Education Loan</h2>
+        <div class="field">
+          <label>Loan Amount</label>
+          <input type="range" id="e-amt" min="100000" max="2000000" step="50000" value="500000" oninput="calcEdu()">
+          <div class="row"><span class="range-labels">₹1L</span><span class="val" id="e-amt-val">₹5,00,000</span><span class="range-labels">₹20L</span></div>
+        </div>
+        <div class="field">
+          <label>Interest Rate (% per year)</label>
+          <input type="range" id="e-rate" min="7" max="15" step="0.25" value="10.5" oninput="calcEdu()">
+          <div class="row"><span class="range-labels">7%</span><span class="val" id="e-rate-val">10.5%</span><span class="range-labels">15%</span></div>
+        </div>
+        <div class="field">
+          <label>Repayment Period (Years)</label>
+          <input type="range" id="e-tenure" min="5" max="15" step="1" value="7" oninput="calcEdu()">
+          <div class="row"><span class="range-labels">5 yrs</span><span class="val" id="e-tenure-val">7 yrs</span><span class="range-labels">15 yrs</span></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="result-box">
+          <div class="label">MONTHLY EMI</div>
+          <div class="amount" id="e-emi">₹8,267</div>
+          <div class="sub">per month for <span id="e-tenure-disp">7</span> years</div>
+        </div>
+        <div class="breakdown">
+          <div class="mini-card"><div class="label">Principal</div><div class="val green" id="e-principal">₹5,00,000</div></div>
+          <div class="mini-card"><div class="label">Total Interest</div><div class="val red" id="e-interest">₹1,94,388</div></div>
+          <div class="mini-card"><div class="label">Total Payment</div><div class="val" id="e-total">₹6,94,388</div></div>
+          <div class="mini-card"><div class="label">Interest %</div><div class="val red" id="e-int-pct">28%</div></div>
+        </div>
+        <div class="pie-wrap">
+          <canvas id="pie-edu" width="90" height="90"></canvas>
+          <div class="legend">
+            <div><div class="dot" style="background:var(--accent2)"></div>Principal amount</div>
+            <div><div class="dot" style="background:#ff6b6b"></div>Total interest</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="ad-mid">ADVERTISEMENT — Google AdSense goes here</div>
+    <hr class="section-break">
+    <div class="amort-title">Amortization Schedule</div>
+    <div class="amort-table-wrap"><table><thead><tr><th>Year</th><th>Principal Paid</th><th>Interest Paid</th><th>Total Paid</th><th>Balance</th></tr></thead><tbody id="e-amort"></tbody></table></div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- BOTTOM AD -->
+<div class="ad-banner" style="margin-top:1rem;">ADVERTISEMENT — Google AdSense 728×90 footer banner goes here</div>
+
+<footer>
+  EMICalc.in — Free loan calculator for Indians. Results are indicative; consult your bank for exact figures.<br>
+  © 2025 EMICalc.in · Privacy Policy · Contact
+</footer>
+
+<script>
+function fmt(n) {
+  return '₹' + Math.round(n).toLocaleString('en-IN');
+}
+
+function calcEMI(principal, annualRate, months) {
+  if (annualRate === 0) return principal / months;
+  const r = annualRate / 12 / 100;
+  return principal * r * Math.pow(1 + r, months) / (Math.pow(1 + r, months) - 1);
+}
+
+function drawPie(canvasId, principal, interest) {
+  const c = document.getElementById(canvasId);
+  if (!c) return;
+  const ctx = c.getContext('2d');
+  const total = principal + interest;
+  const pAngle = (principal / total) * 2 * Math.PI;
+  const cx = 45, cy = 45, r = 38;
+  ctx.clearRect(0, 0, 90, 90);
+  ctx.beginPath(); ctx.moveTo(cx, cy);
+  ctx.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + pAngle);
+  ctx.closePath(); ctx.fillStyle = '#38d9a9'; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(cx, cy);
+  ctx.arc(cx, cy, r, -Math.PI / 2 + pAngle, -Math.PI / 2 + 2 * Math.PI);
+  ctx.closePath(); ctx.fillStyle = '#ff6b6b'; ctx.fill();
+  ctx.beginPath(); ctx.arc(cx, cy, 18, 0, 2 * Math.PI);
+  ctx.fillStyle = '#1e2333'; ctx.fill();
+}
+
+function buildAmortYearly(principal, annualRate, years) {
+  const months = years * 12;
+  const emi = calcEMI(principal, annualRate, months);
+  const r = annualRate / 12 / 100;
+  let balance = principal;
+  let rows = '';
+  for (let y = 1; y <= years; y++) {
+    let yearPrincipal = 0, yearInterest = 0;
+    for (let m = 0; m < 12; m++) {
+      if (balance <= 0) break;
+      const intPart = balance * r;
+      const prinPart = Math.min(emi - intPart, balance);
+      yearInterest += intPart;
+      yearPrincipal += prinPart;
+      balance -= prinPart;
+    }
+    rows += `<tr><td>${y}</td><td>${fmt(yearPrincipal)}</td><td>${fmt(yearInterest)}</td><td>${fmt(yearPrincipal + yearInterest)}</td><td>${fmt(Math.max(balance, 0))}</td></tr>`;
+  }
+  return rows;
+}
+
+function buildAmortMonthly(principal, annualRate, months) {
+  const emi = calcEMI(principal, annualRate, months);
+  const r = annualRate / 12 / 100;
+  let balance = principal;
+  let rows = '';
+  for (let m = 1; m <= months; m++) {
+    const intPart = balance * r;
+    const prinPart = Math.min(emi - intPart, balance);
+    balance -= prinPart;
+    rows += `<tr><td>${m}</td><td>${fmt(prinPart)}</td><td>${fmt(intPart)}</td><td>${fmt(emi)}</td><td>${fmt(Math.max(balance, 0))}</td></tr>`;
+  }
+  return rows;
+}
+
+function calcHome() {
+  const amt = +document.getElementById('home-amt').value;
+  const rate = +document.getElementById('home-rate').value;
+  const years = +document.getElementById('home-tenure').value;
+  const months = years * 12;
+  const emi = calcEMI(amt, rate, months);
+  const totalPay = emi * months;
+  const totalInt = totalPay - amt;
+  document.getElementById('home-amt-val').textContent = fmt(amt);
+  document.getElementById('home-rate-val').textContent = rate.toFixed(1) + '%';
+  document.getElementById('home-tenure-val').textContent = years + ' yrs';
+  document.getElementById('home-tenure-disp').textContent = years;
+  document.getElementById('home-emi').textContent = fmt(emi);
+  document.getElementById('home-principal').textContent = fmt(amt);
+  document.getElementById('home-interest').textContent = fmt(totalInt);
+  document.getElementById('home-total').textContent = fmt(totalPay);
+  document.getElementById('home-int-pct').textContent = Math.round(totalInt / totalPay * 100) + '%';
+  drawPie('pie-home', amt, totalInt);
+  document.getElementById('home-amort').innerHTML = buildAmortYearly(amt, rate, years);
+}
+
+function calcPersonal() {
+  const amt = +document.getElementById('p-amt').value;
+  const rate = +document.getElementById('p-rate').value;
+  const years = +document.getElementById('p-tenure').value;
+  const months = years * 12;
+  const emi = calcEMI(amt, rate, months);
+  const totalPay = emi * months;
+  const totalInt = totalPay - amt;
+  document.getElementById('p-amt-val').textContent = fmt(amt);
+  document.getElementById('p-rate-val').textContent = rate.toFixed(2) + '%';
+  document.getElementById('p-tenure-val').textContent = years + ' yrs';
+  document.getElementById('p-tenure-disp').textContent = years;
+  document.getElementById('p-emi').textContent = fmt(emi);
+  document.getElementById('p-principal').textContent = fmt(amt);
+  document.getElementById('p-interest').textContent = fmt(totalInt);
+  document.getElementById('p-total').textContent = fmt(totalPay);
+  document.getElementById('p-int-pct').textContent = Math.round(totalInt / totalPay * 100) + '%';
+  drawPie('pie-personal', amt, totalInt);
+  document.getElementById('p-amort').innerHTML = buildAmortYearly(amt, rate, years);
+}
+
+function calcBike() {
+  const amt = +document.getElementById('b-amt').value;
+  const rate = +document.getElementById('b-rate').value;
+  const months = +document.getElementById('b-tenure').value;
+  const emi = calcEMI(amt, rate, months);
+  const totalPay = emi * months;
+  const totalInt = totalPay - amt;
+  document.getElementById('b-amt-val').textContent = fmt(amt);
+  document.getElementById('b-rate-val').textContent = rate.toFixed(2) + '%';
+  document.getElementById('b-tenure-val').textContent = months + ' mo';
+  document.getElementById('b-tenure-disp').textContent = months;
+  document.getElementById('b-emi').textContent = fmt(emi);
+  document.getElementById('b-principal').textContent = fmt(amt);
+  document.getElementById('b-interest').textContent = fmt(totalInt);
+  document.getElementById('b-total').textContent = fmt(totalPay);
+  document.getElementById('b-int-pct').textContent = Math.round(totalInt / totalPay * 100) + '%';
+  drawPie('pie-bike', amt, totalInt);
+  document.getElementById('b-amort').innerHTML = buildAmortMonthly(amt, rate, months);
+}
+
+function calcEdu() {
+  const amt = +document.getElementById('e-amt').value;
+  const rate = +document.getElementById('e-rate').value;
+  const years = +document.getElementById('e-tenure').value;
+  const months = years * 12;
+  const emi = calcEMI(amt, rate, months);
+  const totalPay = emi * months;
+  const totalInt = totalPay - amt;
+  document.getElementById('e-amt-val').textContent = fmt(amt);
+  document.getElementById('e-rate-val').textContent = rate.toFixed(2) + '%';
+  document.getElementById('e-tenure-val').textContent = years + ' yrs';
+  document.getElementById('e-tenure-disp').textContent = years;
+  document.getElementById('e-emi').textContent = fmt(emi);
+  document.getElementById('e-principal').textContent = fmt(amt);
+  document.getElementById('e-interest').textContent = fmt(totalInt);
+  document.getElementById('e-total').textContent = fmt(totalPay);
+  document.getElementById('e-int-pct').textContent = Math.round(totalInt / totalPay * 100) + '%';
+  drawPie('pie-edu', amt, totalInt);
+  document.getElementById('e-amort').innerHTML = buildAmortYearly(amt, rate, years);
+}
+
+function switchTab(name) {
+  ['home','personal','bike','edu'].forEach(t => {
+    document.getElementById('tab-' + t).classList.add('hidden');
+  });
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.remove('hidden');
+  event.target.classList.add('active');
+}
+
+calcHome(); calcPersonal(); calcBike(); calcEdu();
+</script>
+</body>
+</html>
